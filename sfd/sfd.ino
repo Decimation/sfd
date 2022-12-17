@@ -59,15 +59,45 @@ void setup()
 	g_lcd.print("Push the buttons"); // print a simple message
 }
 
-int g_rgCount[COUNT];
+static constexpr int HISTORY = 512;
+
+int g_buttonCount[COUNT];
+int g_buttonHistory[HISTORY];
+int g_buttonHistoryIndex = 0;
 
 void loop()
 {
-	g_lcd.setCursor(9, 1); // move cursor to second line "1" and 9 spaces over
-	g_lcd.print(millis() / 1000); // display seconds elapsed since power-up
-
-	g_lcd.setCursor(0, 1); // move to the begining of the second line
+	g_lcd.setCursor(0, 0);
 	lcd_key = readLCDButtons(); // read the buttons
 
-	g_rgCount[lcd_key]++;
+	g_buttonCount[lcd_key]++;
+	g_buttonHistoryIndex = g_buttonHistoryIndex + 1 % HISTORY;
+	fprintf(stdout, "%d %d %d\n", g_buttonHistoryIndex, lcd_key, g_buttonCount[lcd_key]);
+
+	constexpr int i = 256;
+
+	switch (lcd_key) {
+	case UP:
+	case DOWN:
+	case LEFT:
+	case RIGHT:
+	case SELECT:
+		g_lcd.clear();
+		char buf[i];
+		char buf2[i];
+		memset(buf, 0, i);
+		memset(buf2, 0, i);
+
+		size_t l = sprintf(buf, "%ds %dl %dr", g_buttonCount[SELECT], g_buttonCount[LEFT],
+		                   g_buttonCount[RIGHT]);
+
+		size_t l2 = sprintf(buf2, "%du %dd %dn", g_buttonCount[UP], g_buttonCount[DOWN], g_buttonCount[NONE]);
+
+		g_lcd.print(buf);
+		g_lcd.setCursor(0, 1);
+		g_lcd.print(buf2);
+		break;
+	case NONE:
+	default: ;
+	}
 }
