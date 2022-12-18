@@ -3,6 +3,10 @@
 */
 
 // ensure this library description is only included once
+// ReSharper disable CppInconsistentNaming
+// ReSharper disable CppPolymorphicClassWithNonVirtualPublicDestructor
+// ReSharper disable CppClangTidyClangDiagnosticWeakVtables
+// ReSharper disable CppClangTidyClangDiagnosticNonVirtualDtor
 #ifndef LCDKeypad_h
 #define LCDKeypad_h
 
@@ -18,7 +22,7 @@ class LCDKeypad : public LiquidCrystal
 {
 public:
     LCDKeypad();
-    int button();
+    static int button();
 };
 
 #endif

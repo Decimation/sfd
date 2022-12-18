@@ -6,37 +6,54 @@
 
 // the setup function runs once when you press reset or power the board
 // ReSharper disable CppInconsistentNaming
+
+#include <HID.h>
+#include <EEPROM.h>
+#include <SPI.h>
+#include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
 #include "LCDKeypad.h"
-
+#include <Print.h>
+#include "avr/pgmspace.h"
+#include <sys/types.h>
+#include <string.h>
 // the loop function runs over and over again until power down or reset
 
-enum
+enum:int32_t
 {
-	ERROR = -1,
-
-	RIGHT = 0,
-	UP = 1,
-	DOWN = 2,
-	LEFT = 3,
-	SELECT = 4,
-	NONE = 5,
+	NONE = KEYPAD_NONE,
+	RIGHT = KEYPAD_RIGHT,
+	UP = KEYPAD_UP,
+	DOWN = KEYPAD_DOWN,
+	LEFT = KEYPAD_LEFT,
+	SELECT = KEYPAD_SELECT,
 
 	COUNT
 };
 
 // select the pins used on the LCD panel
 
+//8, 9, 4, 5, 6, 7
 static LiquidCrystal g_lcd(8, 9, 4, 5, 6, 7);
 
 // define some values used by the panel and buttons
 
 static int lcd_key = 0;
-
 static int adc_key_in = 0;
 
+static constexpr uint16_t HISTORY = 512;
+static constexpr uint16_t BUF_SIZE = 256;
+
+int g_btnCnt[COUNT];
+int g_btnHistory[HISTORY];
+int g_btnHistoryIdx = 0;
+
+static char g_buf1[BUF_SIZE];
+static char g_buf2[BUF_SIZE];
+
+/*
 // read the buttons
-int readLCDButtons()
+int32_t readLCDButtons()
 {
 	adc_key_in = analogRead(0);
 	// read the value from the sensor
@@ -51,30 +68,39 @@ int readLCDButtons()
 	if (adc_key_in < 790) return SELECT;
 	return NONE; // when all others fail, return this...
 }
+*/
 
 void setup()
 {
 	g_lcd.begin(16, 2); // start the library
 	g_lcd.setCursor(0, 0);
-	g_lcd.print("Push the buttons"); // print a simple message
+	g_lcd.autoscroll();
 }
-
-static constexpr int HISTORY = 512;
-
-int g_buttonCount[COUNT];
-int g_buttonHistory[HISTORY];
-int g_buttonHistoryIndex = 0;
 
 void loop()
 {
-	g_lcd.setCursor(0, 0);
-	lcd_key = readLCDButtons(); // read the buttons
+	g_lcd.home();
+	lcd_key = LCDKeypad::button(); // read the buttons
 
-	g_buttonCount[lcd_key]++;
-	g_buttonHistoryIndex = g_buttonHistoryIndex + 1 % HISTORY;
-	fprintf(stdout, "%d %d %d\n", g_buttonHistoryIndex, lcd_key, g_buttonCount[lcd_key]);
+	g_btnCnt[lcd_key]++;
+	memset(g_buf1, 0, BUF_SIZE);
 
-	constexpr int i = 256;
+	// size_t l = sprintf(buf, "%d %d", lcd_key, g_buttonHistoryIndex);
+	// Serial.println(buf);
+
+	g_btnHistoryIdx = (g_btnHistoryIdx + 1) % HISTORY;
+	g_btnHistory[g_btnHistoryIdx] = lcd_key;
+
+	/*auto* rg = new int[6];
+	rg[0] = UP;
+	rg[1] = UP;
+	rg[2] = DOWN;
+	rg[3] = DOWN;
+	rg[4] = LEFT;
+	rg[5] = RIGHT;
+
+	auto* bytesFind = bytes_find(g_buttonHistory, HISTORY, rg, 6);
+	fprintf(stdout, "%d %d %d %p\n", g_buttonHistoryIndex, lcd_key, g_buttonCount[lcd_key], bytesFind);*/
 
 	switch (lcd_key) {
 	case UP:
@@ -83,19 +109,25 @@ void loop()
 	case RIGHT:
 	case SELECT:
 		g_lcd.clear();
-		char buf[i];
-		char buf2[i];
-		memset(buf, 0, i);
-		memset(buf2, 0, i);
+		memset(g_buf1, 0, BUF_SIZE);
+		memset(g_buf2, 0, BUF_SIZE);
 
-		size_t l = sprintf(buf, "%ds %dl %dr", g_buttonCount[SELECT], g_buttonCount[LEFT],
-		                   g_buttonCount[RIGHT]);
+		size_t l = sprintf(g_buf1, "%ds %dl %dr", g_btnCnt[SELECT], g_btnCnt[LEFT], g_btnCnt[RIGHT]);
 
-		size_t l2 = sprintf(buf2, "%du %dd %dn", g_buttonCount[UP], g_buttonCount[DOWN], g_buttonCount[NONE]);
+		size_t l2 = sprintf(g_buf2, "%du %dd %dn", g_btnCnt[UP], g_btnCnt[DOWN], g_btnCnt[NONE]);
 
-		g_lcd.print(buf);
+		g_lcd.print(g_buf1);
 		g_lcd.setCursor(0, 1);
-		g_lcd.print(buf2);
+		g_lcd.print(g_buf2);
+
+		if (g_btnHistory[g_btnHistoryIdx - 1] == DOWN && lcd_key == DOWN) {
+			g_lcd.clear();
+			g_lcd.print("hello world");
+			g_lcd.setCursor(0, 1);
+			g_lcd.print("my name is RDS");
+			// g_lcd.blink();
+			// delay(3000);
+		}
 		break;
 	case NONE:
 	default: ;

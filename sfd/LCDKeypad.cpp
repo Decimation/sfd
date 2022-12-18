@@ -1,6 +1,7 @@
 /*
   LCDKeypad.cpp
 */
+// ReSharper disable CppInconsistentNaming
 #if ARDUINO >= 100
 #include "Arduino.h"
 #else
@@ -18,12 +19,12 @@ LCDKeypad::LCDKeypad() : LiquidCrystal(8, 9, 4, 5, 6, 7)
 
 int LCDKeypad::button()
 {
-	static int NUM_KEYS = 5;
-	static int adc_key_val[5] = {
+	constexpr int NUM_KEYS = 5;
+	constexpr int adc_key_val[NUM_KEYS] = {
 		30, 150, 360, 535, 760
 	};
-	int k, input;
-	input = analogRead(0);
+	int k;
+	int input = analogRead(0);
 	for (k = 0; k < NUM_KEYS; k++) {
 		if (input < adc_key_val[k]) {
 			return k;
