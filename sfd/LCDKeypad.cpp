@@ -13,14 +13,10 @@
 #include <LiquidCrystal.h>
 #include "LCDKeypad.h"
 
-LCDKeypad::LCDKeypad() : LiquidCrystal(8, 9, 4, 5, 6, 7)
+int8_t button()
 {
-}
-
-int LCDKeypad::button()
-{
-	constexpr int NUM_KEYS = 5;
-	constexpr int adc_key_val[NUM_KEYS] = {
+	constexpr static uint8_t NUM_KEYS = 5;
+	constexpr static uint16_t adc_key_val[NUM_KEYS] = {
 		30, 150, 360, 535, 760
 	};
 	int k;

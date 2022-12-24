@@ -11,19 +11,20 @@
 #define LCDKeypad_h
 
 // library interface description
-#define KEYPAD_NONE -1
-#define KEYPAD_RIGHT 0
-#define KEYPAD_UP 1
-#define KEYPAD_DOWN 2
-#define KEYPAD_LEFT 3
-#define KEYPAD_SELECT 4
 
-class LCDKeypad : public LiquidCrystal
+enum : int8_t
 {
-public:
-    LCDKeypad();
-    static int button();
+	NONE = -1,
+	RIGHT = 0,
+	UP = 1,
+	DOWN = 2,
+	LEFT = 3,
+	SELECT = 4,
+
+	COUNT
 };
+
+int8_t button();
 
 #endif
 
